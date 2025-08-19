@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Clasifica & Gana: Energías Renovables — Maratón+</title>
+<style>
+  :root{
+    --bg:#f7fafc; --text:#0f172a; --muted:#64748b; --card:#ffffff; --line:#e5e7eb;
+    --shadow:0 10px 28px rgba(2,6,23,.08);
+    --solar:#fde68a; --wind:#bae6fd; --hydro:#bbf7d0; --biom:#d9f99d; --geo:#fecaca; --store:#c7d2fe;
+    --ok:#10b981; --bad:#ef4444; --warn:#f59e0b;
+    --pill:#fff; --pillText:#334155;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;color:var(--text);
+    background:linear-gradient(180deg,#ffffff,#f5f7fb 50%,#eef2f7);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{
+    max-width:1120px;margin:0 auto;
+    padding:calc(14px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+  }
+  .title{display:flex;align-items:center;gap:10px}
+  .title h1{margin:0;font-size:22px}
+  @media (min-width:720px){ .title h1{font-size:24px} }
+
+  .hero{margin-top:12px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:var(--shadow)}
+  .hero .inner{ padding:14px }
+
+  .kpi{display:flex;gap:10px;flex-wrap:wrap}
+  .pill{background:var(--pill);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-weight:700;color:var(--pillText);display:flex;align-items:center;gap:8px}
+  .pill.warn{background:#fff7ed;border-color:#f59e0b}
+  .pill.danger{background:#fef2f2;border-color:#ef4444}
+  .pill.accent{background:#eff6ff;border-color:#bfdbfe}
+
+  button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
+  .primary{background:#0ea5e9;color:#fff}
+  .ghost{background:#eef2f7;color:#374151}
+  .success{background:#10b981;color:#fff}
+  .danger{background:#ef4444;color:#fff}
+
+  .arena{display:grid;gap:14px;margin-top:12px}
+  .grid2{display:grid;gap:14px}
+  @media(min-width:1024px){ .grid2{grid-template-columns:1.2fr .8fr} }
+
+  .card{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:16px;padding:16px}
+
+  /* Ítem: sin recuadro punteado ni drag */
+  .itembox{min-height:116px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);background:#ffffff;border:1px solid var(--line)}
+  .item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:#fff;border:1px solid #e5e7eb;user-select:none}
+  .art{width:60px;height:60px;display:grid;place-items:center}
+  .name{font-size:18px;font-weight:800;color:#0f172a}
+  .hint{font-size:13px;color:#94a3b8}
+
+  .bins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  @media(min-width:720px){ .bins{grid-template-columns:repeat(3,1fr)} }
+  @media(min-width:1024px){ .bins{grid-template-columns:repeat(6,1fr)} }
+  .bin{
+    border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;
+    cursor:pointer;min-height:108px;border:2px solid #e5e7eb;transition:transform .06s ease, box-shadow .2s ease
+  }
+  .bin:hover{box-shadow:0 6px 18px rgba(2,6,23,.08)}
+  .bin:active{transform:scale(.98)}
+  .bin h3{margin:0;font-size:14px}
+  .tag{font-size:12px;opacity:.9}
+  .bin .big svg{width:34px;height:34px}
+  .bin.solar{background:linear-gradient(#fffdf5,#fff9e5);border-color:#fde68a}
+  .bin.wind{background:linear-gradient(#ffffff,#f1faff);border-color:#bae6fd}
+  .bin.hydro{background:linear-gradient(#ffffff,#f3fff7);border-color:#bbf7d0}
+  .bin.biom{background:linear-gradient(#ffffff,#f9ffe6);border-color:#d9f99d}
+  .bin.geo{background:linear-gradient(#ffffff,#fff3f3);border-color:#fecaca}
+  .bin.store{background:linear-gradient(#ffffff,#f4f6ff);border-color:#c7d2fe}
+
+  .toast{margin-top:10px;padding:12px 14px;border-radius:12px;background:#f9fafb;border:1px solid #e5e7eb;color:#334155}
+  .toast.ok{border-color:#bbf7d0;background:#ecfdf5;color:#065f46}
+  .toast.bad{border-color:#fecaca;background:#fef2f2;color:#7f1d1d}
+
+  .legend{margin-top:12px;display:grid;gap:8px;grid-template-columns:repeat(2,1fr)}
+  @media(min-width:720px){ .legend{grid-template-columns:repeat(3,1fr)} }
+  @media(min-width:1024px){ .legend{grid-template-columns:repeat(6,1fr)} }
+  .legend .key{display:flex;gap:8px;align-items:center;font-size:12px}
+  .dot{width:14px;height:14px;border-radius:50%}
+
+  details{background:#ffffff;border:1px solid var(--line);border-radius:14px;padding:10px}
+  summary{cursor:pointer;font-weight:700;color:#0f172a}
+
+  /* Ciudad (narrativa) */
+  .city{width:100%;height:160px;background:linear-gradient(#e0f2ff,#f8fafc);border:1px solid var(--line);border-radius:14px;position:relative;overflow:hidden}
+  .ground{position:absolute;bottom:0;left:0;right:0;height:48px;background:linear-gradient(#a7f3d0,#86efac);border-top:1px solid #86efac}
+  .city svg{position:absolute;bottom:48px;left:0;right:0;width:100%;height:auto}
+
+  /* Badges modal */
+  dialog{border:0;border-radius:16px;box-shadow:var(--shadow);padding:0;max-width:720px;width:96%}
+  .modal-head{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:800}
+  .modal-body{padding:16px}
+  .badges{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:520px){ .badges{grid-template-columns:repeat(3,1fr)} }
+  .badge{border:1px dashed var(--line);border-radius:12px;padding:12px;background:#fff;text-align:center}
+  .badge.active{border-style:solid;box-shadow:0 8px 22px rgba(2,6,23,.06)}
+  .badge .btitle{font-size:14px;font-weight:800}
+  .badge .bdesc{font-size:12px;color:#64748b}
+  .table{width:100%;border-collapse:collapse;font-size:14px}
+  .table th,.table td{border:1px solid var(--line);padding:8px;text-align:left}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)}
+
+  /* Power-ups */
+  .powerups{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .pu{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;align-items:center;gap:6px;font-weight:700}
+  .pu[disabled]{opacity:.5}
+
+  /* Diálogo de inicio */
+  #startDlg .row{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  #startDlg label{font-weight:700;color:#0f172a}
+  #startDlg input[type="text"]{padding:12px;border:1px solid var(--line);border-radius:12px;font-weight:700}
+  #startDlg .modes{display:flex;gap:12px;flex-wrap:wrap}
+  #startDlg .chip{border:1px solid var(--line);border-radius:999px;padding:8px 12px;cursor:pointer}
+  #startDlg .chip input{margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="title">
+    <span style="font-size:24px">⚡</span>
+    <h1>Clasifica & Gana: Energías Renovables — Maratón+</h1>
+    <button id="btnBadges" class="ghost" style="margin-left:auto">Colección & Ranking</button>
+  </div>
+
+  <div class="hero">
+    <div class="inner">
+      <div class="kpi">
+        <div class="pill" id="timePill">⏱️ <span id="time">7:00</span></div>
+        <div class="pill" id="livesPill" style="display:none">❤️ Vidas: <span id="lives">3</span></div>
+        <div class="pill">👤 Jugador: <span id="playerNameLbl">—</span></div>
+        <div class="pill">⭐ Puntos: <span id="score">0</span></div>
+        <div class="pill accent">⚡ Combo: <span id="combo">x1.0</span></div>
+        <div class="pill">✅ Aciertos: <span id="hits">0</span></div>
+        <div class="pill">🔥 Racha: <span id="streak">0</span></div>
+      </div>
+
+      <!-- Power-ups -->
+      <div class="powerups">
+        <button class="pu" id="puHint" disabled>💡 Pista <span id="puHintC" style="opacity:.7">(0)</span></button>
+        <button class="pu" id="puFreeze">🧊 Congelar 5s <span id="puFreezeC" style="opacity:.7">(0)</span></button>
+        <button class="pu" id="puX2" disabled>✨ x2 10s <span id="puX2C" style="opacity:.7">(0)</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="arena grid2">
+    <div class="card" id="game" aria-live="polite">
+      <div class="itembox">
+        <div id="item" class="item" aria-grabbed="false">
+          <div class="art" id="art"></div>
+          <div>
+            <div class="name" id="name">Pulsa “Iniciar”</div>
+            <div class="hint">Toca una categoría o pulsa <b>1–6</b>. El ícono es <b>neutral</b>, no revela la respuesta.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bins">
+        <div class="bin solar" data-cat="solar" tabindex="0" aria-label="Solar (1)">
+          <div class="big" id="icon-solar"></div><h3>Solar</h3><div class="tag">☀️ (1)</div>
+        </div>
+        <div class="bin wind" data-cat="eolica" tabindex="0" aria-label="Eólica (2)">
+          <div class="big" id="icon-wind"></div><h3>Eólica</h3><div class="tag">🌬️ (2)</div>
+        </div>
+        <div class="bin hydro" data-cat="hidraulica" tabindex="0" aria-label="Hidráulica (3)">
+          <div class="big" id="icon-hydro"></div><h3>Hidráulica</h3><div class="tag">💧 (3)</div>
+        </div>
+        <div class="bin biom" data-cat="biomasa" tabindex="0" aria-label="Biomasa (4)">
+          <div class="big" id="icon-biom"></div><h3>Biomasa</h3><div class="tag">🌿 (4)</div>
+        </div>
+        <div class="bin geo" data-cat="geotermia" tabindex="0" aria-label="Geotermia (5)">
+          <div class="big" id="icon-geo"></div><h3>Geotermia</h3><div class="tag">🌋 (5)</div>
+        </div>
+        <div class="bin store" data-cat="almacenamiento" tabindex="0" aria-label="Almacenamiento/Red (6)">
+          <div class="big" id="icon-store"></div><h3>Almacen./Red</h3><div class="tag">🔋 (6)</div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast">Inicia desde la ventana para comenzar. Ganas al encender todas las ventanas 🌆</div>
+
+      <details style="margin-top:10px">
+        <summary>Guía rápida</summary>
+        <ul style="margin:8px 0 0 18px;color:#334155;font-size:14px">
+          <li>Toca una categoría o pulsa <b>1–6</b>.</li>
+          <li><b>Contrarreloj</b>: 7:00 fijos; <b>Maratón</b>: vidas configurables.</li>
+          <li>Combo sube si respondes antes de 3 s; x2 dura 10 s. Congelar 5 s solo en Contrarreloj.</li>
+        </ul>
+      </details>
+    </div>
+
+    <!-- Narrativa: Ciudad que se enciende -->
+    <div class="card">
+      <h3 style="margin:0 0 8px">🏙️ Construye tu ciudad renovable</h3>
+      <div class="city">
+        <svg viewBox="0 0 600 180" preserveAspectRatio="xMidYMax meet">
+          <!-- Edificios -->
+          <g id="buildings" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1">
+            <rect x="20" y="60" width="80" height="120" rx="3"/>
+            <rect x="120" y="90" width="60" height="90" rx="3"/>
+            <rect x="200" y="50" width="70" height="130" rx="3"/>
+            <rect x="290" y="80" width="90" height="100" rx="3"/>
+            <rect x="400" y="70" width="70" height="110" rx="3"/>
+            <rect x="490" y="95" width="90" height="85" rx="3"/>
+          </g>
+          <!-- Ventanas apagadas -->
+          <g id="windows"></g>
+          <!-- Sol y turbina deco -->
+          <circle cx="540" cy="30" r="14" fill="#fde68a" stroke="#f59e0b"/>
+          <g transform="translate(90,40)">
+            <circle cx="0" cy="0" r="3" fill="#38bdf8"/>
+            <path d="M0 -18 l3 12 -3 3 -3 -3 3 -12" fill="#93c5fd"/>
+            <path d="M18 0 l-12 3 -3 -3 3 -3 12 3" fill="#bae6fd"/>
+            <path d="M0 18 l3 -12 -3 -3 -3 3 3 12" fill="#93c5fd"/>
+            <rect x="-2" y="3" width="4" height="20" fill="#334155"/>
+          </g>
+        </svg>
+        <div class="ground"></div>
+      </div>
+      <div class="kpi" style="margin-top:10px">
+        <div class="pill">⚡ kW instalados: <span id="kw">0</span></div>
+        <div class="pill">🌍 CO₂ evitado: <span id="co2">0.0</span> kg</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="key"><span class="dot" style="background:var(--solar)"></span>Solar</div>
+    <div class="key"><span class="dot" style="background:var(--wind)"></span>Eólica</div>
+    <div class="key"><span class="dot" style="background:var(--hydro)"></span>Hidráulica</div>
+    <div class="key"><span class="dot" style="background:var(--biom)"></span>Biomasa</div>
+    <div class="key"><span class="dot" style="background:var(--geo)"></span>Geotermia</div>
+    <div class="key"><span class="dot" style="background:var(--store)"></span>Almacen./Red</div>
+  </div>
+</div>
+
+<!-- Modal Badges & Ranking -->
+<dialog id="dlg">
+  <div class="modal-head">🏅 Colección & Ranking</div>
+  <div class="modal-body">
+    <h4 style="margin:0 0 8px">Insignias</h4>
+    <div class="badges" id="badgesGrid"></div>
+    <h4 style="margin:16px 0 8px">Ranking local</h4>
+    <table class="table" id="rankTable">
+      <thead><tr><th>Fecha</th><th>Jugador</th><th>Modo</th><th>Vidas</th><th>Puntos</th><th>Aciertos</th><th>Exactitud</th><th>Duración</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="modal-actions">
+    <button class="ghost" id="btnExport">Exportar CSV</button>
+    <button class="primary" id="btnClose">Cerrar</button>
+  </div>
+</dialog>
+
+<!-- Ventana de inicio -->
+<dialog id="startDlg">
+  <div class="modal-head">🚀 Iniciar partida</div>
+  <div class="modal-body">
+    <div class="row">
+      <label for="playerName">Nombre del jugador</label>
+      <input id="playerName" type="text" placeholder="Tu nombre" maxlength="24" />
+    </div>
+    <div class="row">
+      <label>Modo de juego</label>
+      <div class="modes">
+        <label class="chip"><input type="radio" name="mode" value="chrono" checked> Contrarreloj (7:00)</label>
+        <label class="chip"><input type="radio" name="mode" value="maraton"> Maratón (vidas)</label>
+      </div>
+    </div>
+    <div class="row" id="livesRow" style="display:none">
+      <label>Vidas para Maratón</label>
+      <div class="modes">
+        <label class="chip"><input type="radio" name="livesOpt" value="3" checked> 3 vidas</label>
+        <label class="chip"><input type="radio" name="livesOpt" value="5"> 5 vidas</label>
+      </div>
+    </div>
+  </div>
+  <div class="modal-actions">
+    <button class="primary" id="btnStart">Iniciar</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+
+/* ====== Íconos SVG ====== */
+const ICONS = {
+  solar: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f59e0b"/><stop offset="1" stop-color="#fde68a"/></linearGradient></defs>
+    <circle cx="12" cy="12" r="6" fill="url(#g1)"/>
+    <rect x="8" y="28" width="48" height="24" rx="3" fill="#1f2937" stroke="#94a3b8" stroke-width="2"/>
+    <g stroke="#60a5fa" stroke-width="2">
+      <line x1="12" y1="32" x2="52" y2="32"/><line x1="12" y1="38" x2="52" y2="38"/>
+      <line x1="12" y1="44" x2="52" y2="44"/><line x1="12" y1="50" x2="52" y2="50"/>
+      <line x1="20" y1="30" x2="20" y2="54"/><line x1="32" y1="30" x2="32" y2="54"/><line x1="44" y1="30" x2="44" y2="54"/>
+    </g>
+  </svg>`,
+  eolica: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="32" cy="32" r="4" fill="#38bdf8"/>
+    <path d="M32 8 l4 16 -4 4 -4 -4 4 -16" fill="#93c5fd"/>
+    <path d="M56 32 l-16 4 -4 -4 4 -4 16 4" fill="#bae6fd"/>
+    <path d="M32 56 l4 -16 -4 -4 -4 4 4 16" fill="#93c5fd"/>
+    <rect x="30" y="34" width="4" height="22" fill="#334155"/>
+  </svg>`,
+  hidraulica: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M10 22 h44 v20 a12 12 0 0 1 -12 12 h-20 a12 12 0 0 1 -12 -12 z" fill="#14532d"/>
+    <path d="M12 22 h40 v8 h-40z" fill="#0ea5e9"/>
+    <path d="M8 36 q24 10 48 0 q-4 10 -24 10 q-20 0 -24 -10z" fill="#22c55e" opacity=".9"/>
+    <path d="M20 26 q2 6 0 12" stroke="#fff" stroke-width="2"/>
+  </svg>`,
+  biomasa: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M24 40 q8 -10 0 -20 q16 8 16 20 a8 8 0 0 1 -16 0z" fill="#84cc16"/>
+    <rect x="20" y="44" width="24" height="10" rx="2" fill="#166534"/>
+    <circle cx="32" cy="50" r="2" fill="#dcfce7"/>
+  </svg>`,
+  geotermia: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M8 48 h48 l-8 8 h-32z" fill="#7f1d1d"/>
+    <path d="M32 12 c-8 8 -6 14 0 20 s8 12 0 20 c12 -6 16 -18 8 -28 s-6 -10 -8 -12z" fill="#ef4444"/>
+  </svg>`,
+  almacenamiento: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect x="14" y="18" width="36" height="28" rx="4" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <polygon points="30,24 42,24 34,36 40,36 26,48 30,36 24,36" fill="#a5b4fc"/>
+    <rect x="22" y="12" width="6" height="6" rx="1" fill="#a5b4fc"/><rect x="36" y="12" width="6" height="6" rx="1" fill="#a5b4fc"/>
+  </svg>`,
+  neutral: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Elemento a clasificar">
+    <circle cx="32" cy="32" r="28" fill="#e5e7eb" />
+    <path d="M32 18 a10 10 0 0 1 0 20 v6" stroke="#475569" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="32" cy="50" r="2.8" fill="#475569"/>
+  </svg>`
+};
+
+/* ====== Ready ====== */
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+function init(){
+  /* ====== Banco de Ítems (80+) ====== */
+  const ITEMS = [
+    // ---------- SOLAR ----------
+    ["Módulo FV monocristalino","solar","","Alta eficiencia por célula."],
+    ["Módulo FV policristalino","solar","","Costo competitivo."],
+    ["Panel bifacial","solar","","Captura por ambas caras (albedo)."],
+    ["Panel flexible","solar","","Ligero y adaptable."],
+    ["Célula PERC","solar","","Mejora el rendimiento."],
+    ["Célula TOPCon","solar","","Alta eficiencia de nueva generación."],
+    ["Optimizador de potencia","solar","","Reduce pérdidas por sombras."],
+    ["Controlador MPPT","solar","","Sigue el punto de máxima potencia."],
+    ["Inversor string","solar","","Convierte DC→AC para red."],
+    ["Inversor central","solar","","Grandes plantas FV."],
+    ["Microinversor","solar","","Uno por módulo; útil con sombreado."],
+    ["Caja combinadora DC","solar","","Agrupa strings y protege."],
+    ["Conector MC4","solar","","Estándar para conexiones FV."],
+    ["Cable PV1-F","solar","","Resistente a UV y temperatura."],
+    ["Estructura fija","solar","","Inclinación óptima por latitud."],
+    ["Seguidor 1 eje","solar","","Sigue el sol Este-Oeste."],
+    ["Seguidor 2 ejes","solar","","Máxima captura anual."],
+    ["Colector solar térmico","solar","","Calienta agua con radiación."],
+    // ---------- EÓLICA ----------
+    ["Aerogenerador HAWT","eolica","","Rotor horizontal convencional."],
+    ["Aerogenerador VAWT","eolica","","Rotor vertical, vientos cambiantes."],
+    ["Torre eólica","eolica","","Eleva el rotor al mejor recurso."],
+    ["Pala de aerogenerador","eolica","","Perfil aerodinámico."],
+    ["Nacelle","eolica","","Aloja generador y control."],
+    ["Gearbox (multiplicadora)","eolica","","Adapta velocidad al generador."],
+    ["Generador eólico","eolica","","Mecánica→eléctrica."],
+    ["Sistema pitch","eolica","","Regula ángulo de pala."],
+    ["Sistema yaw","eolica","","Orienta al viento."],
+    ["Anemómetro","eolica","","Mide velocidad del viento."],
+    ["Veleta","eolica","","Mide dirección del viento."],
+    ["SCADA eólico","eolica","","Monitoreo y control del parque."],
+    ["Cimiento monopilote","eolica","","Usado en offshore (marino)."],
+    // ---------- HIDRÁULICA ----------
+    ["Turbina Pelton","hidraulica","","Altos desniveles, bajo caudal."],
+    ["Turbina Francis","hidraulica","","Versátil en alturas medias."],
+    ["Turbina Kaplan","hidraulica","","Bajas caídas, alto caudal."],
+    ["Alternador hidro","hidraulica","","Acoplado a la turbina."],
+    ["Penstock (tubería forzada)","hidraulica","","Conduce agua a presión."],
+    ["Cámara de carga","hidraulica","","Estabiliza nivel antes del penstock."],
+    ["Rejilla de toma","hidraulica","","Filtra sólidos en captación."],
+    ["Canal de aducción","hidraulica","","Conduce agua desde la toma."],
+    ["Casa de máquinas","hidraulica","","Aloja equipos principales."],
+    ["Válvula mariposa","hidraulica","","Aísla/conduce el flujo."],
+    ["Compuerta radial","hidraulica","","Controla caudal en vertedero."],
+    ["Vertedero","hidraulica","","Evacúa excedentes de agua."],
+    ["Sifón de descarga","hidraulica","","Ayuda en vaciado/mantenimiento."],
+    // ---------- BIOMASA ----------
+    ["Digestor anaerobio","biomasa","","Residuos orgánicos → biogás."],
+    ["Biodigestor de membrana","biomasa","","Económico para fincas."],
+    ["Gasómetro","biomasa","","Almacenamiento de biogás."],
+    ["Antorcha de biogás","biomasa","","Quema excedentes con seguridad."],
+    ["Motor-generador biogás","biomasa","","Biogás→electricidad."],
+    ["Filtro de H₂S","biomasa","","Protege equipos del sulfuro."],
+    ["Lavador de gas (scrubber)","biomasa","","Limpia impurezas del biogás."],
+    ["Pelletizadora","biomasa","","Compacta biomasa en pellets."],
+    ["Briquetadora","biomasa","","Prensa biomasa en briquetas."],
+    ["Caldera de biomasa","biomasa","","Vapor/ACS a partir de pellets."],
+    ["Secador de biomasa","biomasa","","Reduce humedad para mejor poder calorífico."],
+    ["Tolva de alimentación","biomasa","","Suministro controlado a caldera."],
+    ["Fermentador para bioetanol","biomasa","","Produce alcohol combustible."],
+    // ---------- GEOTERMIA ----------
+    ["Pozo productor","geotermia","","Extrae fluido caliente."],
+    ["Pozo de reinyección","geotermia","","Devuelve fluido al reservorio."],
+    ["Cabezal de pozo","geotermia","","Valvulería y seguridad."],
+    ["Separador ciclónico","geotermia","","Separa vapor de agua."],
+    ["Intercambiador geotérmico","geotermia","","Transfiere calor al ciclo de potencia."],
+    ["Turbina geotérmica","geotermia","","Vapor geotérmico→electricidad."],
+    ["Turbina ORC","geotermia","","Genera a menor temperatura."],
+    ["Condensador geotérmico","geotermia","","Condensa vapor tras turbina."],
+    ["Torre de enfriamiento","geotermia","","Disipa calor del ciclo."],
+    ["Bomba sumergible (ESP)","geotermia","","Eleva fluido en pozos."],
+    ["Sonda geotérmica vertical","geotermia","","Intercambio para bombas de calor."],
+    ["Bomba de calor geotérmica","geotermia","","Climatización eficiente."],
+    // ---------- ALMACENAMIENTO / RED ----------
+    ["Baterías LiFePO₄","almacenamiento","","Seguras y durables."],
+    ["Baterías NMC","almacenamiento","","Alta densidad energética."],
+    ["BMS (gestión de baterías)","almacenamiento","","Protege y balancea celdas."],
+    ["Inversor bidireccional","almacenamiento","","Carga/descarga, soporte a red."],
+    ["Inversor híbrido","almacenamiento","","FV + baterías + red."],
+    ["Sistema UPS","almacenamiento","","Respaldo ante cortes."],
+    ["Supercapacitor","almacenamiento","","Potencia instantánea."],
+    ["Volante de inercia","almacenamiento","","Estabiliza frecuencia."],
+    ["EMS (gestión de energía)","almacenamiento","","Orquesta fuentes y cargas."],
+    ["Medidor inteligente","almacenamiento","","Telemedición y tarifas."],
+    ["Transformador elevador","almacenamiento","","Adecuación de tensión."],
+    ["Interruptor seccionador","almacenamiento","","Aislamiento y maniobra."],
+    ["Banco de condensadores","almacenamiento","","Corrección de factor de potencia."],
+    ["Cargador de VE","almacenamiento","","Carga vehículos eléctricos."],
+    ["Estación de carga DC","almacenamiento","","Carga rápida en corriente continua."],
+    ["V2G (vehículo a red)","almacenamiento","","Autos como almacenamiento."],
+    ["Electrolizador PEM","almacenamiento","","Excedentes → hidrógeno verde."],
+    ["Pila de combustible","almacenamiento","","H₂ → electricidad/calor."],
+    ["Microred (controlador)","almacenamiento","","Coordina isla y conexión."],
+  ];
+
+  /* ====== Utils ====== */
+  const $ = s => document.querySelector(s);
+  const byId = id => document.getElementById(id);
+  const rand = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+  const shuffle = arr => arr.sort(()=>Math.random()-0.5);
+  const fmt = sec=>{const m=Math.floor(sec/60), s=sec%60; return `${m}:${String(s).padStart(2,'0')}`};
+
+  // WebAudio beep
+  let AC = null;
+  function beep(freq=880, dur=0.08, type='sine'){
+    try{
+      AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+      const o=AC.createOscillator(), g=AC.createGain();
+      o.type=type; o.frequency.value=freq;
+      o.connect(g); g.connect(AC.destination);
+      g.gain.setValueAtTime(0.001, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.18, AC.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime+dur);
+      o.start(); o.stop(AC.currentTime+dur);
+    }catch{}
+  }
+  const vibrate = pat => { try{ if(navigator.vibrate) navigator.vibrate(pat);}catch{} };
+
+  const validCats = ['solar','eolica','hidraulica','biomasa','geotermia','almacenamiento'];
+  const pretty = cat => ({solar:'Solar',eolica:'Eólica',hidraulica:'Hidráulica',biomasa:'Biomasa',geotermia:'Geotermia',almacenamiento:'Almacen./Red'})[cat]||cat;
+
+  /* ====== Estado ====== */
+  let mode='chrono'; // 'chrono' | 'maraton'
+  let playerName='—';
+  let itemsLeft=[], score=0, hits=0, streak=0;
+  let timeLeft=420, timer=null, running=false, finished=false;
+  let lives=3, livesChosen=3, startMs=0;
+  let lastShownAt=0, combo=1.0, x2Until=0, freezeUntil=0;
+
+  const stats = { correct:{}, wrong:{}, kw:0, co2:0 }; validCats.forEach(c=>{ stats.correct[c]=0; stats.wrong[c]=0; });
+
+  const inv = { hint:0, freeze:0, x2:0 };
+  const badges = new Set(JSON.parse(localStorage.getItem('renov_badges')||'[]'));
+  const rank = JSON.parse(localStorage.getItem('renov_rank')||'[]');
+
+  /* ====== Referencias UI ====== */
+  const artEl = byId('art'), nameEl = byId('name'), toast = byId('toast');
+  const scoreEl = byId('score'), hitsEl=byId('hits'), streakEl=byId('streak'), comboEl=byId('combo');
+  const timeEl = byId('time'), timePill = byId('timePill');
+  const livesPill = byId('livesPill'), livesEl=byId('lives');
+  const kwEl=byId('kw'), co2El=byId('co2');
+  const puHint=byId('puHint'), puFreeze=byId('puFreeze'), puX2=byId('puX2');
+  const puHintC=byId('puHintC'), puFreezeC=byId('puFreezeC'), puX2C=byId('puX2C');
+  const itemEl = byId('item');
+  const playerNameLbl = byId('playerNameLbl');
+
+  byId('icon-solar').innerHTML = ICONS.solar;
+  byId('icon-wind').innerHTML = ICONS.eolica;
+  byId('icon-hydro').innerHTML = ICONS.hidraulica;
+  byId('icon-biom').innerHTML = ICONS.biomasa;
+  byId('icon-geo').innerHTML = ICONS.geotermia;
+  byId('icon-store').innerHTML = ICONS.almacenamiento;
+
+  // Ciudad: ventanas
+  const windowsG = document.querySelector('#windows');
+  const buildingRects = [
+    {x:20,y:60,w:80,h:120}, {x:120,y:90,w:60,h:90}, {x:200,y:50,w:70,h:130},
+    {x:290,y:80,w:90,h:100}, {x:400,y:70,w:70,h:110}, {x:490,y:95,w:90,h:85}
+  ];
+  const windowNodes=[];
+  buildingRects.forEach(b=>{
+    const cols=Math.floor(b.w/14), rows=Math.floor(b.h/18);
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const wx=b.x+6+c*12, wy=b.y+6+r*16;
+        const el=document.createElementNS("http://www.w3.org/2000/svg","rect");
+        el.setAttribute('x',wx); el.setAttribute('y',wy); el.setAttribute('width',8); el.setAttribute('height',12);
+        el.setAttribute('rx',2); el.setAttribute('fill','#e2e8f0');
+        windowsG.appendChild(el);
+        windowNodes.push(el);
+      }
+    }
+  });
+  function lightWindows(count){
+    for(let i=0;i<windowNodes.length;i++){
+      windowNodes[i].setAttribute('fill', i<count ? '#fde68a' : '#e2e8f0');
+    }
+    if(count >= windowNodes.length){ winGame(); }
+  }
+
+  /* ====== Inicio: diálogo ====== */
+  const startDlg = byId('startDlg'), btnStart=byId('btnStart'), playerNameInput=byId('playerName');
+  const livesRow = byId('livesRow');
+  const dlg = byId('dlg'), btnBadges = byId('btnBadges'), btnClose = byId('btnClose'), badgesGrid = byId('badgesGrid'), rankTable = byId('rankTable').querySelector('tbody'), btnExport=byId('btnExport');
+
+  // Mostrar/ocultar vidas según modo
+  document.querySelectorAll('input[name="mode"]').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      const val = (document.querySelector('input[name="mode"]:checked')||{}).value || 'chrono';
+      livesRow.style.display = val==='maraton' ? 'block' : 'none';
+    });
+  });
+
+  // abre inicio
+  startDlg.showModal();
+
+  btnStart.addEventListener('click', ()=>{
+    const chosen = (document.querySelector('input[name="mode"]:checked')||{}).value || 'chrono';
+    const chosenLives = parseInt((document.querySelector('input[name="livesOpt"]:checked')||{}).value||'3',10);
+    playerName = (playerNameInput.value||'').trim() || 'Jugador';
+    mode = chosen; livesChosen = chosenLives;
+    playerNameLbl.textContent = playerName;
+    startDlg.close();
+    start();
+  });
+
+  // Modal badges/ranking
+  btnBadges.addEventListener('click', ()=>{ renderBadges(); renderRanking(); dlg.showModal(); });
+  btnClose.addEventListener('click', ()=> dlg.close());
+  btnExport.addEventListener('click', exportCSV);
+
+  /* ====== Acciones de juego ====== */
+  // Bins por toque/clic
+  document.querySelectorAll('.bin').forEach(bin=>{
+    bin.addEventListener('click', ()=> choose(bin.dataset.cat));
+  });
+
+  // Teclado (desktop)
+  window.addEventListener('keydown', e=>{
+    if(finished||!running) return;
+    const map={1:'solar',2:'eolica',3:'hidraulica',4:'biomasa',5:'geotermia',6:'almacenamiento'};
+    if(map[e.key]) choose(map[e.key]);
+  });
+
+  // Power-ups
+  puHint.addEventListener('click', ()=>{
+    if(inv.hint<=0) return;
+    inv.hint--; updatePUs();
+    beep(1320, .09, 'triangle'); toast.className='toast'; toast.innerHTML = `💡 Pista: ${itemEl.dataset.tip || 'Piensa en la FUENTE principal.'}`;
+  });
+  puFreeze.addEventListener('click', ()=>{
+    if(mode!=='chrono') return; // solo en contrarreloj
+    if(inv.freeze<=0) return;
+    inv.freeze--; updatePUs();
+    freezeUntil = performance.now()+5000; toast.className='toast'; toast.textContent='🧊 Tiempo congelado 5 s';
+    try{ if(navigator.vibrate) navigator.vibrate([30,40,30]); }catch{}
+    beep(660,.1,'sine');
+  });
+  puX2.addEventListener('click', ()=>{
+    if(inv.x2<=0) return;
+    inv.x2--; updatePUs();
+    x2Until = performance.now()+10000; toast.className='toast'; toast.textContent='✨ x2 puntos por 10 s';
+    try{ if(navigator.vibrate) navigator.vibrate(40); }catch{}
+    beep(990,.09,'sawtooth');
+  });
+
+  /* ====== Lógica ====== */
+  function start(){
+    finished=false; running=true;
+    score=0; hits=0; streak=0; combo=1.0; x2Until=0; freezeUntil=0;
+    stats.kw=0; stats.co2=0; validCats.forEach(c=>{ stats.correct[c]=0; stats.wrong[c]=0; });
+    startMs = performance.now();
+
+    // UI según modo
+    if(mode==='chrono'){
+      timeLeft = 420; timeEl.textContent=fmt(timeLeft);
+      timePill.style.display='inline-flex';
+      lives = livesChosen; // no se usa en chrono, pero registramos
+      livesPill.style.display='none';
+      puFreeze.style.display='inline-flex';
+      toast.className='toast';
+      toast.innerHTML='⏳ <b>Contrarreloj</b> 7:00. Responde antes de 3 s para subir combo. Congelar 5 s disponible.';
+    }else{ // maratón
+      timePill.style.display='none';
+      lives = livesChosen; livesEl.textContent=String(lives);
+      livesPill.style.display='inline-flex';
+      puFreeze.style.display='none'; // no aplica
+      toast.className='toast';
+      toast.innerHTML=`🏁 <b>Maratón</b>: ${lives} ${lives===1?'vida':'vidas'}, sin tiempo. ¡Enciende toda la ciudad para ganar!`;
+    }
+
+    itemsLeft = shuffle([...ITEMS]); show(pickNextItem(true)); updateHUD(true); updatePUs();
+
+    if(timer){ clearInterval(timer); timer=null;}
+    if(mode==='chrono'){
+      timer = setInterval(()=>{
+        const now = performance.now();
+        if(now < freezeUntil) return; // congelado
+        timeLeft--;
+        if(timeLeft<=0){ timeLeft=0; timeEl.textContent=fmt(timeLeft); end(); return; }
+        timeEl.textContent=fmt(timeLeft);
+        if(timeLeft<=60) timePill.classList.add('warn');
+        if(timeLeft<=30){ timePill.classList.remove('warn'); timePill.classList.add('danger'); }
+      }, 1000);
+    }
+  }
+
+  function show(item){
+    const [name, cat, _u, tip] = item;
+    nameEl.textContent = name;
+    byId('art').innerHTML = ICONS.neutral; // neutral
+    itemEl.dataset.cat = cat;
+    itemEl.dataset.tip = tip || '';
+    lastShownAt = performance.now();
+  }
+
+  function choose(cat){
+    if(!running||finished) return;
+    const real = itemEl.dataset.cat, tip = itemEl.dataset.tip;
+    const fast = (performance.now() - lastShownAt) < 3000; // <3s sube combo
+    combo = Math.max(1.0, fast ? Math.min(4.0, +(combo + 0.5).toFixed(1)) : +(combo - 0.25).toFixed(2));
+    if(!fast) combo = Math.max(1.0, combo);
+    const multNow = combo * (performance.now()<x2Until ? 2 : 1);
+
+    if(cat===real){
+      streak++; hits++;
+      stats.correct[real]++; awardOnMilestones();
+      const base = 10 + Math.min(20, (streak-1)*2);
+      score = Math.max(0, score + Math.round(base * multNow));
+      addCityProgress(real);
+      toast.className='toast ok';
+      toast.innerHTML = `✅ ¡Correcto! <b>${nameEl.textContent}</b> → <b>${pretty(real)}</b>. ${tip} ${multNow>1?`<b>×${multNow.toFixed(1)}</b>`:''}`;
+      try{ if(navigator.vibrate) navigator.vibrate(30); }catch{}
+      beep(880,.08,'sine');
+      if(hits>0 && hits%5===0) grantRandomPowerUp();
+    }else{
+      streak=0;
+      stats.wrong[real]++;
+      if(mode==='maraton'){
+        lives--; livesEl.textContent=String(lives);
+        if(lives<=0){ end(); return; }
+      }else{
+        score = Math.max(0, score - 5);
+      }
+      toast.className='toast bad';
+      toast.innerHTML = `❌ Ups. <b>${nameEl.textContent}</b> va a <b>${pretty(real)}</b>. ${tip}`;
+      try{ if(navigator.vibrate) navigator.vibrate([20,40,20]); }catch{}
+      beep(220,.11,'square');
+    }
+    updateHUD();
+    next();
+  }
+
+  function next(msg){
+    if(itemsLeft.length===0){ itemsLeft = shuffle([...ITEMS]); }
+    const nextItem = pickNextItem();
+    show(nextItem);
+    if(msg){ toast.className='toast'; toast.textContent = msg; }
+  }
+
+  // Dificultad adaptativa
+  function pickNextItem(initial=false){
+    const weights = {}; let totalW=0;
+    validCats.forEach(c=>{
+      const w = Math.max(0.2, 1 + (stats.wrong[c]||0) - (stats.correct[c]||0)*0.2);
+      weights[c]=w; totalW+=w;
+    });
+    let r = Math.random()*totalW, chosen='solar';
+    for(const c of validCats){ r-=weights[c]; if(r<=0){ chosen=c; break; } }
+    let idx = itemsLeft.findIndex(i=>i[1]===chosen);
+    if(idx===-1) idx = 0;
+    return itemsLeft.splice(idx,1)[0];
+  }
+
+  function addCityProgress(cat){
+    stats.kw += 3; kwEl.textContent = String(stats.kw);
+    stats.co2 = +(stats.co2 + 0.5).toFixed(1); co2El.textContent = stats.co2.toFixed(1);
+    const lit = Math.min(windowNodes.length, hits*2);
+    lightWindows(lit);
+  }
+
+  function awardOnMilestones(){
+    const toAward=[];
+    if(hits===10) toAward.push(['Aprendiz Solar','Primera decena de aciertos.']);
+    if(hits===20) toAward.push(['Técnico de Microred','20 aciertos totales.']);
+    if(streak===10) toAward.push(['Combo Maestro','10 aciertos seguidos.']);
+    toAward.forEach(([t,d])=>{
+      badges.add(t); saveBadges();
+      toast.className='toast ok';
+      toast.innerHTML = `🏅 <b>${t}</b> — ${d}`;
+      beep(1320,.1,'triangle');
+    });
+  }
+
+  function grantRandomPowerUp(){
+    const pool = mode==='chrono' ? ['hint','freeze','x2'] : ['hint','x2']; // sin freeze en maratón
+    const key = pool[rand(0,pool.length-1)];
+    inv[key]++; updatePUs();
+    const label = key==='hint'?'Pista':key==='freeze'?'Congelar 5s':'x2 10s';
+    toast.className='toast'; toast.innerHTML = `🎁 Power-up: <b>${label}</b> (+1)`;
+    beep(660,.08,'sine');
+  }
+
+  function winGame(){
+    if(!running) return;
+    finished=true; running=false;
+    if(timer){ clearInterval(timer); timer=null; }
+    const totalAttempts = hits + Object.values(stats.wrong).reduce((a,b)=>a+b,0);
+    const acc = totalAttempts? Math.round((hits/totalAttempts)*100):0;
+    const elapsed = performance.now()-startMs;
+    const html = `
+      <div class="card">
+        <h2 style="margin:0 0 8px">🏆 ¡Ganaste, ${playerName}!</h2>
+        <p>¡Encendiste <b>todas</b> las ventanas de la ciudad!</p>
+        <div class="kpi" style="margin:8px 0 10px">
+          <div class="pill">⭐ Puntos: <b>${score}</b></div>
+          <div class="pill">✅ Aciertos: <b>${hits}</b></div>
+          <div class="pill">🎯 Exactitud: <b>${acc}%</b></div>
+          <div class="pill">⏱️ Tiempo: <b>${fmt(Math.floor(elapsed/1000))}</b></div>
+        </div>
+        <div class="toast ok">La ciudad brilla gracias a tus decisiones de energía limpia ✨</div>
+        <div class="controls"><button class="success" onclick="location.reload()">Jugar de nuevo</button></div>
+      </div>`;
+    byId('game').innerHTML = html;
+    saveRanking(acc, Math.floor(elapsed/1000), true);
+  }
+
+  function end(){
+    if(finished) return; finished=true; running=false;
+    if(timer){ clearInterval(timer); timer=null; }
+    const totalAttempts = hits + Object.values(stats.wrong).reduce((a,b)=>a+b,0);
+    const acc = totalAttempts? Math.round((hits/totalAttempts)*100):0;
+    const durationSec = mode==='chrono' ? (420 - timeLeft) : Math.floor((performance.now()-startMs)/1000);
+    const reason = (mode==='maraton' && lives<=0) ? 'Te quedaste sin vidas.' : 'Se acabó el tiempo.';
+    const html = `
+      <div class="card">
+        <h2 style="margin:0 0 8px">⏰ Fin de la partida</h2>
+        <p>${reason}</p>
+        <div class="kpi" style="margin:8px 0 10px">
+          <div class="pill">⭐ Puntos: <b>${score}</b></div>
+          <div class="pill">✅ Aciertos: <b>${hits}/${totalAttempts}</b></div>
+          <div class="pill">🎯 Exactitud: <b>${acc}%</b></div>
+          <div class="pill">⚡ kW: <b>${stats.kw}</b></div>
+          <div class="pill">🌍 CO₂: <b>${stats.co2.toFixed(1)} kg</b></div>
+        </div>
+        <div class="toast">Recuerda: decide por <i>fuente</i>. Almacenamiento/Red para elementos que gestionan o guardan energía.</div>
+        <div class="controls"><button class="success" onclick="location.reload()">Jugar de nuevo</button></div>
+      </div>`;
+    byId('game').innerHTML = html;
+    saveRanking(acc, durationSec, false);
+  }
+
+  function updateHUD(resetTime=false){
+    scoreEl.textContent=String(score);
+    hitsEl.textContent=String(hits);
+    streakEl.textContent=String(streak);
+    comboEl.textContent='x'+combo.toFixed(1);
+    if(resetTime && mode==='chrono'){ timeEl.textContent=fmt(timeLeft); }
+  }
+  function updatePUs(){
+    puHint.disabled = inv.hint<=0; puHintC.textContent='('+inv.hint+')';
+    puX2.disabled = inv.x2<=0; puX2C.textContent='('+inv.x2+')';
+    if(mode==='chrono'){ puFreeze.style.display='inline-flex'; puFreeze.disabled = inv.freeze<=0; puFreezeC.textContent='('+inv.freeze+')'; }
+    else { puFreeze.style.display='none'; }
+  }
+  function saveBadges(){ localStorage.setItem('renov_badges', JSON.stringify(Array.from(badges))); }
+
+  // Modal renders
+  function renderBadges(){
+    const defs = [
+      ['Aprendiz Solar','Primera decena de aciertos.','☀️'],
+      ['Técnico de Microred','20 aciertos totales.','🔌'],
+      ['Combo Maestro','10 aciertos seguidos.','🔥'],
+    ];
+    badgesGrid.innerHTML = defs.map(([t,d,em])=>{
+      const active = badges.has(t) ? 'active' : '';
+      return `<div class="badge ${active}"><div style="font-size:24px">${em}</div><div class="btitle">${t}</div><div class="bdesc">${d}</div></div>`;
+    }).join('');
+  }
+  function renderRanking(){
+    const list = JSON.parse(localStorage.getItem('renov_rank')||'[]').slice(0,10);
+    rankTable.innerHTML = list.map(r=>`<tr><td>${r.date}</td><td>${r.player}</td><td>${r.mode}</td><td>${r.lives||'-'}</td><td>${r.score}</td><td>${r.hits}</td><td>${r.acc}%</td><td>${r.duration}</td></tr>`).join('') || `<tr><td colspan="8">No hay partidas aún</td></tr>`;
+  }
+  function exportCSV(){
+    const list = JSON.parse(localStorage.getItem('renov_rank')||'[]');
+    const rows = [['Fecha','Jugador','Modo','Vidas','Puntos','Aciertos','Exactitud','Duración']]
+      .concat(list.map(r=>[r.date,r.player,r.mode,r.lives||'',r.score,r.hits,r.acc,r.duration]));
+    const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='ranking_renovables.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+  function saveRanking(acc, durationSec, win){
+    try{
+      const rec = {
+        date: new Date().toLocaleString(),
+        player: playerName,
+        mode: mode==='chrono'?'Contrarreloj':'Maratón',
+        lives: mode==='maraton'? livesChosen : '',
+        score, hits, acc, duration: fmt(durationSec), win: !!win
+      };
+      rank.push(rec);
+      rank.sort((a,b)=> b.score - a.score);
+      localStorage.setItem('renov_rank', JSON.stringify(rank.slice(0,50)));
+    }catch{}
+  }
+
+  /* ====== Seguridad: errores a la UI ====== */
+  window.addEventListener('error', e=>{
+    toast.className='toast bad'; toast.textContent='Error: '+(e.message||'desconocido');
+  });
+
+  /* ====== PWA: manifest + SW mínimos ====== */
+  (function setupPWA(){
+    try{
+      function genIcon(size, bg, emoji){
+        const c=document.createElement('canvas'); c.width=c.height=size;
+        const ctx=c.getContext('2d'); ctx.fillStyle=bg; ctx.fillRect(0,0,size,size);
+        ctx.font = `${Math.floor(size*0.6)}px system-ui,Apple Color Emoji,Segoe UI Emoji`; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(emoji, size/2, size/2);
+        return c.toDataURL('image/png');
+      }
+      const icon192 = genIcon(192,'#0ea5e9','⚡');
+      const icon512 = genIcon(512,'#0ea5e9','⚡');
+      const manifest = {
+        name:"Clasifica & Gana: Energías Renovables",
+        short_name:"Renovables",
+        start_url:".",
+        display:"standalone",
+        background_color:"#ffffff",
+        theme_color:"#0ea5e9",
+        icons:[
+          {src:icon192,sizes:"192x192",type:"image/png"},
+          {src:icon512,sizes:"512x512",type:"image/png"}
+        ]
+      };
+      const mblob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
+      const murl = URL.createObjectURL(mblob);
+      const link = document.createElement('link'); link.rel='manifest'; link.href=murl; document.head.appendChild(link);
+
+      if('serviceWorker' in navigator){
+        const swCode = `
+          const CACHE='renovables-cache-v1';
+          self.addEventListener('install',e=>{
+            e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));
+          });
+          self.addEventListener('activate',e=>{ e.waitUntil(self.clients.claim()); });
+          self.addEventListener('fetch',e=>{
+            e.respondWith(
+              caches.match(e.request).then(r=> r || fetch(e.request).then(res=>{
+                const copy=res.clone();
+                caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
+                return res;
+              }).catch(()=>r))
+            );
+          });
+        `;
+        const swBlob = new Blob([swCode],{type:'text/javascript'});
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl).catch(()=>{});
+      }
+    }catch{}
+  })();
+
+  /* ====== Inicial UI ====== */
+  playerNameLbl.textContent = '—';
+  timeEl.textContent = '7:00';
+  // Power-ups iniciales (0)
+  inv.hint=0; inv.freeze=0; inv.x2=0; updatePUs();
+}
+</script>
+</body>
+</html>
